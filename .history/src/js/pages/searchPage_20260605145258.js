@@ -4,7 +4,6 @@ import {
   bindSearchEvents,
   renderDefaultTables,
   initNutritionData,
-  applyPendingSelectedFoodsFromOverview,
 } from "../fn/foodSearchEvents.js"; // food_group бүрээр багцалсан food_code, food_name-үүдийг авна. Жишээ нь: "Cereals and Cereal products" → [{ food_code: "01_0106", food_name: "Barley flour, whole grain" }, ...]
 
 import { renderSidebarPageLayout } from "../layouts/sidebarPageLayout.js"; // Sidebar-тай хуудасны layout-г үүсгэх
@@ -60,8 +59,6 @@ export async function renderSearchPage() {
       bindImageModalEvents();
       imageModalBound = true;
     }
-
-    applyPendingSelectedFoodsFromOverview(); // Overview page-аас шилжихдээ хайх үгийг хадгалсан бол тэр үгээр хайх үйлдлийг автоматаар хийх функц
   } catch (error) {
     app.innerHTML = renderPageLayout({
       content: renderNotification(

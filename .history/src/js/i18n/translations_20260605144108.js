@@ -11,7 +11,8 @@ export const translations = {
       brand: "хүнсний найрлагын мэдээллийн сан",
     },
     overview: {
-      title: "Мэдээллийн сангийн танилцуулга",
+      title: "Тойм",
+      welcome: "Тойм хуудсанд тавтай морил.",
     },
     searchPage: {
       title: "Хүнс хайх",
@@ -86,16 +87,6 @@ export const translations = {
       loadingData: "Өгөгдөл ачаалж байна...",
       failedToLoadNutritionData:
         "Хүнсний найрлагын өгөгдөл ачаалахад алдаа гарлаа.",
-      noFoodData: "Энэ аймагт хоолны мэдээлэл олдсонгүй.",
-    },
-    modal: {
-      clear: "Арилгах",
-      selectAll: "Бүгдийг сонгох",
-      search: "Хайх",
-      close: "Хаах",
-      selected: "сонгосон",
-      province: "аймаг",
-      informationWillAppear: "Мэдээлэл энд харагдана.",
     },
   },
   en: {
@@ -110,7 +101,8 @@ export const translations = {
       brand: "Food Composition Database",
     },
     overview: {
-      title: "Food Composition Database Introduction",
+      title: "Overview",
+      welcome: "Welcome to the overview page.",
     },
     searchPage: {
       title: "Food search",
@@ -187,16 +179,6 @@ export const translations = {
       enterFoodName: "Please enter a food name.",
       loadingData: "Loading data...",
       failedToLoadNutritionData: "Failed to load nutrition data.",
-      noFoodData: "No food data found for this province.",
-    },
-    modal: {
-      clear: "Clear",
-      selectAll: "Select All",
-      search: "Search",
-      close: "Close",
-      selected: "Selected",
-      province: "province",
-      informationWillAppear: "Information will appear here.",
     },
   },
 };

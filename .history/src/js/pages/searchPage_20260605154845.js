@@ -1,112 +1,108 @@
-import { renderNotification } from "../layouts/notificationLayout.js";
-import { renderNutritionTables } from "../components/nutritionTables.js";
-import { nutritionGroups } from "../components/searchSettingsSidebar.js";
-import { getLocalizedValue, t } from "../i18n/i18n.js";
+import { getNutritions } from "../services/nutritionService.js"; // Хоолны шим тэжээлийн өгөгдлийг авна.
+import { renderSearchFilters } from "../components/SearchFilters.js"; // Хайлт хийх хэсгийг HTML болгоно.
+import { renderNutritionTables } from "../components/NutritionTables.js"; // Хайлтын үр дүнг хүснэгт хэлбэрээр HTML болгоно.
+import { loadImages } from "../services/imageService.js";
+import { renderImageModal, bindImageModalEvents } from "../components/ImageModal.js";
 
-// food_group бүрээр бүлэглэсэн food_code, food_name авна. Жишээ нь: "Cereals and Cereal products" → [{ food_code: "01_0106", food_name: "Barley flour, whole grain" }, ...]
-export function buildFoodGroups(data) {
+let nutritionData = [];
+
+const DEFAULT_TYPES = ["proximates", "minerals", "vitamins"];
+const DEFAULT_ITEM_COUNT = 4;
+
+export async function renderSearchPage() {
+  const app = document.getElementById("app");
+
+  // Өгөгдөл ирэх хүртэл түр Loading data... гэж харуулна.
+  app.innerHTML = `
+    <section id="search" class="section is-fullheight">
+      <div class="container">
+        <h1 class="is-size-4-mobile is-size-3-tablet is-size-2-desktop has-text-weight-semibold has-text-centered txt-h">
+          Food Composition Database
+        </h1>
+
+        <div class="box">
+          <p>Loading data...</p>
+        </div>
+      </div>
+    </section>
+  `;
+
+  try {
+    nutritionData = await getNutritions(); // Хүнсний найрлагын JSON өгөгдүүдлийг авна.
+    await loadImages(); // Зургийн JSON өгөгдлийг ачаална.
+    const foodGroups = buildFoodGroups(nutritionData); // food_group бүрээр багцалсан food_code, food_name-үүдийг авна. Жишээ нь: "Cereals and Cereal products" → [{ food_code: "01_0106", food_name: "Barley flour, whole grain" }, ...]
+
+    app.innerHTML = `
+      <!-- 2. Өгөгдөл хайж харуулах хэсэг -->
+      <div id="search">
+        <div class="container">
+          <h1 class="is-size-4-mobile is-size-3-tablet is-size-2-desktop has-text-weight-semibold has-text-centered txt-h">
+            Food Composition Database
+          </h1>
+
+          <div class="columns is-variable is-4">
+            <!-- 2.1. Хайх хэсэг -->
+            <div class="column is-12-mobile is-4-tablet is-3-desktop">
+              ${renderSearchFilters(foodGroups)}
+            </div>
+
+            <!-- 2.2. Үр дүнг харуулах хэсэг -->
+            <div id="resultTbl" class="column is-12-mobile is-8-tablet is-9-desktop">
+              ${renderDefaultTables(nutritionData)}
+            </div>
+          </div>
+        </div>
+      </div>
+      ${renderImageModal()}
+    `;
+
+    bindSearchEvents(); // UI дээрх бүх event (click, change, keydown)-уудыг холбож өгдөг функц
+
+    bindImageModalEvents();
+
+    applyPendingSelectedFoodsFromOverview(); // Overview page-аас шилжихдээ хайх үгийг хадгалсан бол тэр үгээр хайх үйлдлийг автоматаар хийх функц
+  } catch (error) {
+    app.innerHTML = `
+      <section class="section">
+        <div class="container">
+          <div class="notification is-danger">
+            Failed to load nutrition data.
+          </div>
+        </div>
+      </section>
+    `;
+
+    console.error("Failed to load nutrition data:", error);
+  }
+}
+
+// food_group бүрээр багцалсан food_code, food_name авна. Жишээ нь: "Cereals and Cereal products" → [{ food_code: "01_0106", food_name: "Barley flour, whole grain" }, ...]
+function buildFoodGroups(data) {
   const grouped = new Map(); // Map бол (key → value) хэлбэрээр өгөгдөл хадгалах бүтэц юм. grouped объект үүсгэв.
 
   for (const item of data) {
-    const groupKey = item.food_group?.en || "Other";
+    const groupName = item.food_group || "Other";
 
-    if (!grouped.has(groupKey)) {
-      grouped.set(groupKey, {
-        groupName: item.food_group,
-        items: new Map(),
-      });
+    if (!grouped.has(groupName)) {
+      grouped.set(groupName, new Map());
     }
 
-    const groupData = grouped.get(groupKey);
-
-    groupData.items.set(item.food_code, {
+    const groupItems = grouped.get(groupName);
+    groupItems.set(item.food_code, {
       food_code: item.food_code,
       food_name: item.food_name,
     });
   }
 
-  return Array.from(grouped.values()).map((group) => ({
-    groupName: group.groupName,
-
-    items: Array.from(group.items.values()).sort((a, b) =>
-      getLocalizedValue(a.food_name).localeCompare(
-        getLocalizedValue(b.food_name),
-      ),
-    ),
+  return Array.from(grouped.entries()).map(([groupName, itemsMap]) => ({
+    groupName,
+    items: Array.from(itemsMap.values()).sort((a, b) => (a.food_name || "").localeCompare(b.food_name || "")),
   }));
 }
-/* Оролтын өгөгдөл:
-  const data = [
-    {
-      food_group: "Cereals and Cereal products",
-      food_code: "01_0106",
-      food_name: "Barley flour, whole grain",
-    },
-    {
-      food_group: "Cereals and Cereal products",
-      food_code: "01_0101",
-      food_name: "Rice",
-    },
-    {
-      food_group: "Vegetables",
-      food_code: "02_0001",
-      food_name: "Carrot",
-    },
-    {
-      food_group: "Vegetables",
-      food_code: "02_0002",
-      food_name: "Potato",
-    },
-  ];
-
-Функц food_group-ээр бүлэглэнэ. Гаралтын өгөгдөл:
-[
-  {
-    groupName: "Cereals and Cereal products",
-    items: [
-      {
-        food_code: "01_0106",
-        food_name: "Barley flour, whole grain",
-      },
-      {
-        food_code: "01_0101",
-        food_name: "Rice",
-      },
-    ],
-  },
-  {
-    groupName: "Vegetables",
-    items: [
-      {
-        food_code: "02_0001",
-        food_name: "Carrot",
-      },
-      {
-        food_code: "02_0002",
-        food_name: "Potato",
-      },
-    ],
-  },
-];
-*/
-
-let nutritionData = [];
-
-export function initNutritionData(data) {
-  nutritionData = data;
-}
-
-// const DEFAULT_TYPES = ["proximates", "minerals", "vitamins"];
-const DEFAULT_TYPES = nutritionGroups
-  .flatMap((group) => group.items)
-  .filter((item) => item.checked)
-  .map((item) => item.value);
-
-const DEFAULT_ITEM_COUNT = 3;
 
 // UI дээрх бүх event (click, change, keydown)-уудыг холбож өгдөг функц
-export function bindSearchEvents() {
-  const searchRoot = document;
+function bindSearchEvents() {
+  const searchRoot = document.getElementById("search");
   const searchBtn = document.getElementById("searchBtn");
   const searchTxt = document.getElementById("searchTxt");
 
@@ -137,6 +133,22 @@ export function bindSearchEvents() {
       rerenderCurrentSelection();
     }
   });
+
+  // food group expand/collapse event
+  searchRoot.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    const toggle = target.closest(".toggle-sublist");
+    if (!toggle) return;
+
+    event.preventDefault();
+
+    const sublist = toggle.nextElementSibling;
+    if (!(sublist instanceof HTMLElement)) return;
+
+    sublist.classList.toggle("is-hidden");
+  });
 }
 
 // Текст бичиж food_name-ээр хайх функц
@@ -147,9 +159,14 @@ function handleTextSearch() {
 
   // Хайх үг хоосон бол анхааруулах мессеж харуулна.
   if (!keyword) {
-    setResultHtml(renderNotification(t("notification.enterFoodName")));
+    setResultHtml(`
+      <div class="notification is-warning">
+        Please enter a food name.
+      </div>
+    `);
     return;
   }
+
   renderCurrentResults();
 }
 
@@ -187,25 +204,11 @@ function getMatchedItems() {
   const keyword = getSearchKeyword();
 
   if (selectedCodes.length) {
-    return nutritionData.filter((item) =>
-      selectedCodes.includes(item.food_code),
-    );
+    return nutritionData.filter((item) => selectedCodes.includes(item.food_code));
   }
 
   if (keyword) {
-    // 2-оос бага тэмдэгт бол хайхгүй
-    if (keyword.length < 2) {
-      return [];
-    }
-
-    return nutritionData.filter((item) => {
-      const foodName = getLocalizedValue(item.food_name).toLowerCase();
-
-      // Үгээр хайх
-      const words = foodName.split(/\s+/);
-
-      return words.some((word) => word.startsWith(keyword));
-    });
+    return nutritionData.filter((item) => (item.food_name || "").toLowerCase().includes(keyword));
   }
 
   return nutritionData.slice(0, DEFAULT_ITEM_COUNT);
@@ -218,28 +221,22 @@ function getSearchKeyword() {
 
 // Хүнсний жагсаалтаас сонгосон checkbox-уудын food_code утгуудыг массив хэлбэрээр авна. Жишээ нь: ["01_0106", "01_0107", ...]
 function getSelectedFoodCodes() {
-  return Array.from(
-    document.querySelectorAll('input[name="foodcode"]:checked'),
-  ).map((checkbox) => checkbox.value);
+  return Array.from(document.querySelectorAll('input[name="foodcode"]:checked')).map((checkbox) => checkbox.value);
 }
 
 // nutrition category-ээс сонгосон бүх checkbox-уудын утгыг авна. Жишээ нь: proximates, minerals, vitamins гэх мэт.
 function getSelectedNutritionTypes() {
-  return Array.from(
-    document.querySelectorAll('input[name="nutrition"]:checked'),
-  ).map((checkbox) => checkbox.value);
+  return Array.from(document.querySelectorAll('input[name="nutrition"]:checked')).map((checkbox) => checkbox.value);
 }
 
 // Хүнсний жагсаалтаас сонгож хайх checkbox-уудыг бүгдийг нь uncheck болгох функц.
 function clearCheckedFoodCodes() {
-  document
-    .querySelectorAll('input[name="foodcode"]:checked')
-    .forEach((checkbox) => {
-      checkbox.checked = false;
-    });
+  document.querySelectorAll('input[name="foodcode"]:checked').forEach((checkbox) => {
+    checkbox.checked = false;
+  });
 }
 
-// // Үр дүн харуулах хэсэг рүү HTML-ийг гаргана.
+// Үр дүн харуулах хэсэг рүү HTML-ийг гаргана.
 function setResultHtml(html) {
   const resultTbl = document.getElementById("resultTbl");
   if (resultTbl) {
@@ -248,13 +245,13 @@ function setResultHtml(html) {
 }
 
 // Эхний 4 элементийг харуулж байна. DEFAULT_ITEM_COUNT = 4. DEFAULT_TYPES = ["proximates", "minerals", "vitamins"] гэсэн nutrition category-үүдийг харуулж байна.
-export function renderDefaultTables(data) {
+function renderDefaultTables(data) {
   const defaultItems = data.slice(0, DEFAULT_ITEM_COUNT);
   return renderNutritionTables(defaultItems, DEFAULT_TYPES);
 }
 
 // Overview page-аас шилжихдээ хайх үгийг хадгалсан бол тэр үгээр хайх үйлдлийг автоматаар хийх функц
-export function applyPendingSelectedFoodsFromOverview() {
+function applyPendingSelectedFoodsFromOverview() {
   const raw = sessionStorage.getItem("pendingSelectedFoods");
   if (!raw) return;
 
@@ -285,9 +282,7 @@ export function applyPendingSelectedFoodsFromOverview() {
   });
 
   selectedFoods.forEach((food) => {
-    const checkbox = document.querySelector(
-      `input[name="foodcode"][value="${food.food_code}"]`,
-    );
+    const checkbox = document.querySelector(`input[name="foodcode"][value="${food.foodCode}"]`);
 
     if (checkbox) {
       checkbox.checked = true;
@@ -301,4 +296,3 @@ export function applyPendingSelectedFoodsFromOverview() {
   }
 
   sessionStorage.removeItem("pendingSelectedFoods");
-}

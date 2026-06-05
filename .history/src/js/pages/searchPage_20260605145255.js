@@ -1,10 +1,11 @@
+import { t } from "../i18n/i18n.js";
+
 import { getNutritions } from "../services/nutritionService.js"; // Хоолны шим тэжээлийн өгөгдлийг авна.
 import {
   buildFoodGroups,
   bindSearchEvents,
   renderDefaultTables,
   initNutritionData,
-  applyPendingSelectedFoodsFromOverview,
 } from "../fn/foodSearchEvents.js"; // food_group бүрээр багцалсан food_code, food_name-үүдийг авна. Жишээ нь: "Cereals and Cereal products" → [{ food_code: "01_0106", food_name: "Barley flour, whole grain" }, ...]
 
 import { renderSidebarPageLayout } from "../layouts/sidebarPageLayout.js"; // Sidebar-тай хуудасны layout-г үүсгэх
@@ -23,15 +24,13 @@ import {
   bindImageModalEvents,
 } from "../components/imageModal.js";
 
-import { t } from "../i18n/i18n.js";
-
 let imageModalBound = false;
 
 export async function renderSearchPage() {
   const app = document.getElementById("app");
 
   app.innerHTML = renderPageLayout({
-    content: renderNotification(t("notification.loadingData")),
+    content: renderNotification("Loading data..."),
   });
 
   try {
@@ -44,7 +43,7 @@ export async function renderSearchPage() {
       renderSidebarPageLayout({
         sidebarContent: `${renderSearchFoodName()} ${renderSearchSettings()} ${renderFoodGroupList(groupedFoods)}`,
         pageId: "search",
-        pageTitle: t("searchPage.title"),
+        pageTitle: "Food Composition Database",
         mainContent: `
       <div id="resultTbl">
         ${renderDefaultTables(nutritionData)}
@@ -60,14 +59,9 @@ export async function renderSearchPage() {
       bindImageModalEvents();
       imageModalBound = true;
     }
-
-    applyPendingSelectedFoodsFromOverview(); // Overview page-аас шилжихдээ хайх үгийг хадгалсан бол тэр үгээр хайх үйлдлийг автоматаар хийх функц
   } catch (error) {
     app.innerHTML = renderPageLayout({
-      content: renderNotification(
-        t("notification.failedToLoadNutritionData"),
-        "danger",
-      ),
+      content: renderNotification("Failed to load nutrition data.", "danger"),
     });
     console.error("Failed to load nutrition data:", error);
   }
