@@ -1,14 +1,13 @@
-import { t } from "../i18n/i18n.js";
 import { renderPageLayout } from "../layouts/pageLayout.js";
 
-export function renderOverviewPage() {
+export function renderBooksPage() {
   const app = document.getElementById("app");
 
   app.innerHTML = renderPageLayout({
-    id: "overview",
-    title: t("overview.title"),
+    id: "books",
+    title: t("books.title"),
     content: `
-      <p>${t("overview.welcome")}</p>
+      <p>${t("books.welcome")}</p>
     `,
   });
 }
