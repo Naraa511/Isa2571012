@@ -10,16 +10,25 @@ export const translations = {
       brandSpan: "Монголын",
       brand: "хүнсний найрлагын мэдээллийн сан",
     },
-    overview: {
-      title: "Мэдээллийн сангийн танилцуулга",
+    Overview: {
+      title: "Тойм",
+      welcome: "Тойм хуудсанд тавтай морил.",
+    },
+    search: {
+      title: "Хайлт",
+      welcome: "Хайлтын хуудсанд тавтай морил.",
+    },
+    calculation: {
+      title: "Тооцоолуур",
+      welcome: "Тооцооллын хуудсанд тавтай морил.",
     },
     books: {
       title: "Ном",
-      view: "Үзэх",
+      welcome: "Номын хуудсанд тавтай морил.",
     },
-
-    search: {
-      title: "Хүнс хайх",
+    contact: {
+      title: "Холбоо барих",
+      welcome: "Холбоо барих хуудсанд тавтай морил.",
     },
     calculation: {
       title: "Хүнсний тооцоолол",
@@ -138,11 +147,6 @@ export const translations = {
     overview: {
       title: "Food Composition Database Introduction",
     },
-    books: {
-      title: "Books",
-      view: "View",
-    },
-
     search: {
       title: "Food search",
     },

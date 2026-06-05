@@ -17,6 +17,10 @@ export const translations = {
       title: "Ном",
       view: "Үзэх",
     },
+    books: {
+      title: "Books",
+      view: "View",
+    },
 
     search: {
       title: "Хүнс хайх",
@@ -138,11 +142,6 @@ export const translations = {
     overview: {
       title: "Food Composition Database Introduction",
     },
-    books: {
-      title: "Books",
-      view: "View",
-    },
-
     search: {
       title: "Food search",
     },
